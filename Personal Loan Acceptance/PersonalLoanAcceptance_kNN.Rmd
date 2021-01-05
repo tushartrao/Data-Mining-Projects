@@ -1,13 +1,6 @@
----
-title: "Group15HW4"
-author: "YIWEI LI, TUSHAR RAO"
-date: "11/22/2020"
-output: pdf_document
----
-
 ```{r}
-#problem 1
-#AConsider the following customer: Age=40, Experience=10, Income=84, Family=2, CCAvg=2, Education2=1, Education3=0, Mortgage=O, Securities Account=O, CD Account=O, Online=1 and Credit.card = 1. Perform a k-NN classification with all predictors except ID and ZIP code using k = 1. Remember to transform categorical predictors with more than two categories into dummy variables first. Specify the success class as 1 (loan acceptance), and use the default cutoff value of 0.5. How would this customer be classified?
+#Consider the following customer: Age=40, Experience=10, Income=84, Family=2, CCAvg=2, Education2=1, Education3=0, Mortgage=O, Securities Account=O, CD Account=O, Online=1 and Credit.card = 1. Perform a k-NN classification with all predictors except ID and ZIP code using k = 1. Remember to transform categorical predictors with more than two categories into dummy variables first. Specify the success class as 1 (loan acceptance), and use the default cutoff value of 0.5. How would this customer be classified?
+
 library(readxl)
 library(caret)
 library(lattice)
@@ -43,12 +36,9 @@ Knn.test<-knn(train=training.new.df[,-7],test=TS.norm,cl=training.new.df$`Person
 Knn.test
 
 ```
-#Answer for Question 1 
-#according to the resulut of KNN Test we got the asnwer is o at the levwl 0 and 1 which means the loando not accept
+So, for the given data, we have a 0.
 
-
-#Question b
-#What is a choice of k that balances between overfitting and ignoring the predictor information?
+#Finding a value for k that balances between overfitting and ignoring the predictor information
 ```{r}
 library(caret)
 library(class)
@@ -75,22 +65,24 @@ plot(accuracy.a, type = "b")
 
 
  
-```
-#Question c Show the classification matrix for the validation data that results from using the best k. 
-#We are going to use k values 3 according to the last question's answer.
+``` 
+Classification matrix for the validation data that results from using the best k.
+
+k = 3
 ```{r}
 pred_knn<-knn(training.new.df[,-7],validation.new.df[,-7],
                  cl=training.new.df$`Personal Loan`,k = 3)
 pred_knn
 confusionMatrix(pred_knn,factor(validation.new.df$`Personal Loan`))
 ```
-#Question d Consider the following customer: Age=40, Experience=10, Income=84, Family=2, CCAvg=2, Education 1=0, Education 2=1, Education 3=0, Mortgage=0, Securities Account=0, CD Account=0, Online=1 and Credit Card=1. Classify the customer using the best k.
-#We are going to use k values 3 according to the 2nd question's answer.
+Consider the following customer: Age=40, Experience=10, Income=84, Family=2, CCAvg=2, Education 1=0, Education 2=1, Education 3=0, Mortgage=0, Securities Account=0, CD Account=0, Online=1 and Credit Card=1. Classify the customer using the best k.
+
+k = 3
 ```{r}
 knn_test<-knn(train=training.new.df[,-7],test = validation.new.df[,-7],cl=training.new.df$`Personal Loan`, k=3)
 knn_test
 ```
-#e. Repartition the data, this time into training, validation, and test sets (50% : 30% : 20%). Apply the k-NN method with the k chosen above. Compare the classification matrix of the test set with that of the training and validation sets. Comment on the differences and their reason
+# Repartition the data, this time into training, validation, and test sets (50% : 30% : 20%). Apply the k-NN method with the k chosen above. Compare the classification matrix of the test set with that of the training and validation sets. Comment on the differences and their reason
 #  Subset the data into traing,validation and test sets
 ```{r}
 index_train <- sample(row.names(UB), 0.5*dim(UB)[1])
@@ -115,7 +107,7 @@ train_E[1:6]<-as.data.frame(lapply(train_e[1:6],normalize))
 valid_E[1:6]<-as.data.frame(lapply(valid_e[1:6],normalize))
 test_E[1:6] <- as.data.frame(lapply(test_e[1:6],normalize))
 ```
-#perform knn model
+# knn model
 ```{r}
 knn_train <- knn(train_E[,-7],train_E[,-7],cl=train_E$`Personal Loan`,k = 3) 
 knn_valid <- knn(train_E[,-7],valid_E[,-7],cl=train_E$`Personal Loan`,k = 3) 
@@ -130,72 +122,10 @@ acc_e[2,2] <- confusionMatrix(knn_valid,factor(train_E$`Personal Loan`))$overall
 acc_e[3,2] <- confusionMatrix(knn_test,factor(train_E$`Personal Loan`))$overall[1]
 acc_e
 ```
-#Answer for question E 
-#according to the problem B we know that the when k=3 is the best vale to choose the dateset.it is relly clear that the accureat is equal to 0.903 which is really high and we got the similiar accurate between validate data and test data 
 
-#Question 2 
-#A
-```{r}
-BH.df<-read_excel("BostonHousing.xlsx",sheet = "Data")
-View(BH.df)
-library(readxl)
-library(class)
-library(caret)
-#select the variables
-bha <- BH.df[1:13]
-bha$MEDV<-factor(BH.df$MEDV)
-#Partition the data into training (60%) and validation (40%) sets.
-TRAIN <- sample(rownames(bha),dim(bha)[1]*0.6)
-train <- bha [TRAIN,]
-TEST <- setdiff(rownames(bha),TRAIN)
-test <- bha[TEST,]
-N2 <- preProcess(train[,c(1:3)],method = c("center", "scale")) 
-train_n <- train
-test_n <- test
-train_n[,c(-4,-13)] <- predict(N2, train[,c(1:3)]) 
-test_n[,c(-4,-13)] <- predict(N2, test[,c(1:3)])
-head(train_n)
-```
+When k=3, accuracy is equal to 0.903 
 
-```{r}
-#a.Perform a k-NN prediction with all 13 predictors (ignore the CAT.MEDV column),trying values of k from 1 to 5. Make sure to normalize the data (click "normalize input data"). What is the best k chosen? What does it mean?
-library(class)
-library(e1071)
-library(gmodels)
-library(kknn)
-library(Metrics)
 
-set.seed(1000)
-acc.df <- data.frame(k=seq(1,5,1),RMSE=rep(0,5))
-for (i in 1:5){
-pred_knn <- knn(train_n[,-13],test_n[,-13],cl=train_n$MEDV,k=i)
-acc.df[i,2] <- rmse(as.numeric(test$MEDV),as.numeric(pred_knn)) 
-}
-acc.df
-```
-#Answer for question a: When RMSE is the lowest, the k value is 1 so 1 is the best k value.
-```{r}
-#b. Predict the MEDV for a tract with the following information, using the best k:
-test<- data.frame('CRIM'=0.2,'ZN'=0,'INDUS'=7,'CHAS'=0,'NOX'=0.538,'RM'=6,'AGE'=62,'DIS'=4.7,'RAD'=4, 'TAX'=307,'PTRATIO'=21,'LSTAT'=10)
-test_n<- test
-test_n[,-4] <- predict(N2, test[,-4])
-test_n
-test_knn <- knn(train_n[,-13],test,cl=train_n$MEDV,k=1) 
-test_knn
-```
-#CWhy is the error of the training data zero?
-#answer for question c: becasue in the model we design it automatic choose and must be one hundrend percent right when k=1 therefore it is zero error in the training data 
-
-#DWhy is the validation data error overly optimistic compared to the error rate when applying this k-NN predictor to new data?
-#The answer for this question is that validation data is come form the and also is the sample of the new data. while when we use the knn method to predict the variable the overly optimistic is not evitbale therefore the error is overly optimistic 
-
-#EIf the purpose is to predict MEDV for several thousands of new tracts, what would be the disadvantage of using k-NN prediction? List the operations that the algorithm goes through in order to produce each prediction.
-#answer for question E 
-#A the kNN method is not suitb for predictor a large number of tracts and the calculate will be too large and complicate 
-#B the first step is we need to normalization the dataset 
-### the second step is we need the find the suitable value of k 
-### the third step is we need to find the distance between our dataset and training dataset 
-### The fourth step is we need to arrgane the value of distacne in order therewe can sorted 
 
 
 ```{r}
