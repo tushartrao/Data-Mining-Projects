@@ -1,0 +1,320 @@
+---
+title: "Group15 HW5"
+author: "YIWEI LI/TR"
+date: "12/5/2020"
+output: pdf_document
+---
+library(car)
+library(ggplot2)
+library(caret)
+library(readxl)
+#prepare the data
+
+```{r}
+dataset <- read_excel("ToyotaCorolla.xlsx",sheet="data")
+#first step creat dummy varibale for the Fule Type and Color
+#Fule_type
+dataset$Fuel_Type = as.factor(dataset$Fuel_Type) 
+dummy_FuelType = dummyVars("~Fuel_Type",data = dataset,sep = NULL) 
+NewFule_type = data.frame(predict(dummy_FuelType,newdata = dataset))
+#color
+dataset$Color = as.factor(dataset$Color)
+dummy_Color = dummyVars("~Color",data = dataset,sep = NULL) 
+NewColor = data.frame(predict(dummy_Color,newdata = dataset))
+#add the new dataset Fule_type and color to the dataset to prepare the data preprocessing
+new_dataset = c(dataset, NewFule_type, NewColor) 
+DataPreprocessing = as.data.frame(new_dataset)
+```
+
+
+Problem 1 
+#A.1
+```{r}
+library(rpart)
+library(rpart.plot)
+set.seed(100)
+RT <- rpart(Price ~ Age_08_04 + KM + Fuel_Type + HP + Automatic + Doors + Quarterly_Tax + 
+                    Mfr_Guarantee + Guarantee_Period + Airco + Automatic_airco + CD_Player + Powered_Windows +
+                    Sport_Model + Tow_Bar, method="anova", data = DataPreprocessing)
+#for gettiing result 
+printcp(RT)
+#plot the result
+plotcp(RT)
+ 
+#find the best cp
+pruned.ct = RT$cptable[which.min(RT$cptable[,"xerror"]),"CP"]
+NEWRT = prune(RT, cp = pruned.ct)
+prp(NEWRT, type = 3, extra = 1, split.font = 1, varlen = -10, fallen.leaves = T,main = "Regression Tree")  
+```
+#answer for A.1 after we run the regression tree, we know that the Age, KM and HP are the three important car specifications for predicting the car's price.
+
+
+#A.2
+#for doing this question, we need to split the data into trainging(50%),Validation(30%), and test(20%) 
+```{r}
+Train.data <- sample(row.names(DataPreprocessing), 0.5*dim(DataPreprocessing)[1])
+TrainDP<- DataPreprocessing[Train.data,]
+
+Valid.data <- sample(row.names(DataPreprocessing), 0.3*dim(DataPreprocessing)[1])
+ValidDP<- DataPreprocessing[Valid.data,]
+
+Test.data <- sample(row.names(DataPreprocessing), 0.2*dim(DataPreprocessing)[1])
+TestDP<-DataPreprocessing[Test.data,]
+```
+
+
+```{r}
+#for getting their RMS error 
+PT = predict(NEWRT, TrainDP) 
+PV = predict(NEWRT, ValidDP) 
+PTE= predict(NEWRT, TestDP)
+
+train_RMSE = sqrt(mean((PT-TrainDP$Price)^2)) 
+valid_RMSE = sqrt(mean((PV-ValidDP$Price) ^2)) 
+test_RMSE = sqrt(mean((PTE-TestDP$Price)^2)) 
+#show the result
+train_RMSE
+valid_RMSE
+test_RMSE
+#plot the three boxplot 
+par(mfrow=c(1,3))
+boxplot(PT-TrainDP$Price)
+boxplot(PV-ValidDP$Price)
+boxplot(PTE-TestDP$Price)
+```
+
+#answer for question: according to the result from two result we know that alought the answer seems very similiar but i believe the plot shows more accurate answer.
+
+#Answer for question A.3 in my personal respective, i believe we will get the more accurate anwer becasue full tree use more validation data. 
+
+#Question B 
+#b.1
+#For the first sept we need to creat a new varibae that categorizes price into 20 bins of equal counts.
+
+```{r}
+#creat the new varibale 
+NEWVB<- cut(DataPreprocessing$Price, 20)
+DataPreprocessing$Binned_price <- as.numeric(NEWVB)
+```
+
+```{r}
+Train.data <- sample(row.names(DataPreprocessing), 0.5*dim(DataPreprocessing)[1])
+TrainDP<- DataPreprocessing[Train.data,]
+
+Valid.data <- sample(row.names(DataPreprocessing), 0.3*dim(DataPreprocessing)[1])
+ValidDP<- DataPreprocessing[Valid.data,]
+
+Test.data <- sample(row.names(DataPreprocessing), 0.2*dim(DataPreprocessing)[1])
+TestDP<-DataPreprocessing[Test.data,]
+```
+
+
+```{r}
+#use the binned price take place price
+
+CL<- rpart(Binned_price ~ Age_08_04 + KM +
+                Fuel_TypeDiesel + Fuel_TypeCNG + Fuel_TypePetrol+ HP + Automatic + Doors + Quarterly_Tax + 
+                Mfr_Guarantee + Guarantee_Period + Airco + Automatic_airco + CD_Player + Powered_Windows + 
+                Sport_Model + Tow_Bar,method="class",data=TestDP)
+
+
+printcp(CL) 
+
+plotcp(CL) 
+
+
+prp(CL, type = 3, extra = 1, split.font = 1, varlen = -10, 
+    fallen.leaves = T, main="Classification Tree")
+
+```
+#answerfor question1 
+#in my presonal respect, the anwes between regression tree and classificiation tree is very similiar. The struect is very similar if we choose the same type.The top predictior is almost the same while the classification tree has large size than regressio tree.
+
+#b.2
+```{r}
+NEWDATA= data.frame(Age_08_04 = 77, KM = 117000, Fuel_Type = "Petrol", Fuel_TypeCNG = 0, Fuel_TypeDiesel = 0,
+                     Fuel_TypePetrol=1, HP = 110, Automatic = 0, Doors = 5, Quarterly_Tax = 100,
+                     Mfr_Guarantee = 0, Guarantee_Period = 3, Airco = 1, Automatic_airco = 0,
+                     CD_Player = 0, Powered_Windows = 0, Sport_Model = 0, Tow_Bar =1)
+
+# RT prediction
+RESULT_RT = predict(RT, NEWDATA) 
+RESULT_RT
+
+# CT prediction
+RESULT_CL = predict(CL, NEWDATA) 
+RESULT_CL
+```
+#b.3
+#compare with the result we know that the CL method has the less magnitude but has smallar size of data whil the RT method has the large magnitude but has large size of data. ALl in all the result is very similiar and all contain the same top predictors 
+
+#problem 2 
+```{r}
+library(readxl)
+Bank <- read_excel("Banks.xlsx")
+Bank$`Financial Condition` <- factor(Bank$`Financial Condition`, levels = c(1,0))
+logit.bank <- glm(`Financial Condition` ~ `TotExp/Assets` + `TotLns&Lses/Assets`, data = Bank, family = binomial(link= "logit"))
+summary(logit.bank)
+```
+
+
+PLots of the logistic regression are as follows:
+```{r}
+plot(logit.bank)
+```
+
+A)
+i) logit=log(odds)=log(p/(1-p))= -14.188 + (79.964).TotExp/Assets + (9.17).TotLns&Lses/Assets
+ii) Probability(p)=1/(1+e^(-1).(-14.188 + (79.964).TotExp/Assets + (9.17).TotLns&Lses/Assets))
+iii)Odds= e^(-14.188 + (79.964).TotExp/Assets + (9.17).TotLns&Lses/Assets))
+
+
+B)
+```{r}
+test <- data.frame("TotExp/Assets" = 0.11, "TotLns&Lses/Assets" = 0.6,
+check.names = FALSE)
+```
+
+```{r}
+#Predicting Logit
+logit <- predict.glm(logit.bank, test)
+logit
+```
+
+```{r}
+#Predicting Odds
+odds <- exp(logit)
+odds
+```
+
+```{r}
+#Predicting Probability
+probability <- predict.glm(logit.bank, test, type = "response")
+probability
+```
+
+```{r}
+#Bank classification
+bankcl <- ifelse(probability>0.5, "1 - weak", "0 - strong")
+bankcl
+```
+C)Following are the corresponding threshold values for odds and logit respectively for cutoff=0.5:
+```{r}
+c <- as.numeric(0.5)
+o <- c/(1-c)
+o
+```
+
+```{r}
+logit_new <- log(o)
+logit_new
+```
+D)
+```{r}
+oddscoef <- exp(coefficients(logit.bank)[3])
+oddscoef
+```
+Since coefficient of this particular variable is very low, its effect is less significant compared to other variables
+
+E)
+```{r}
+p <- ifelse(logit.bank$fitted.values>= 0.9, 1,0)
+table(p, Bank$`Financial Condition`)
+```
+
+```{r}
+p <- ifelse(logit.bank$fitted.values>= 0.7, 1,0)
+table(p, Bank$`Financial Condition`)
+```
+
+```{r}
+p <- ifelse(logit.bank$fitted.values>= 0.5, 1,0)
+table(p, Bank$`Financial Condition`)
+```
+
+```{r}
+p <- ifelse(logit.bank$fitted.values>= 0.3, 1,0)
+table(p, Bank$`Financial Condition`)
+```
+
+
+```{r}
+p <- ifelse(logit.bank$fitted.values>= 0.1, 1,0)
+table(p, Bank$`Financial Condition`)
+```
+
+```{r}
+p <- ifelse(logit.bank$fitted.values>= 0.05, 1,0)
+table(p, Bank$`Financial Condition`)
+```
+
+```{r}
+p <- ifelse(logit.bank$fitted.values>= 0.02, 1,0)
+table(p, Bank$`Financial Condition`)
+```
+
+The number of "false positives" i.e. number of predictions predicted as strong when it is actually weak decreases with decrease in cutoff. Hence, cutoff should be decreased.
+
+Problem 3
+```{r}
+library(readxl)
+SA <- read_excel("System Administrators.xlsx")
+```
+
+A)
+```{r}
+plot(SA$Experience, SA$Training, col = ifelse(SA$`Completed task` == "Yes",
+"Orange", "Green"))
+```
+
+From the graph, it is clear that experience is useful for predicting task completion. Chances of Completed TAsk being Yes increases with increase in Experience
+
+
+B)
+```{r}
+SA$`Completed task` <- ifelse(SA$`Completed task` == "Yes", "1", "0")
+
+SA$`Completed task` <- as.numeric(SA$`Completed task`)
+
+# Logistic Regression
+logitSA <- glm(`Completed task` ~ Experience + Training, data = SA, family ="binomial")
+summary(logitSA)
+
+```
+```{r}
+predSA <- predict(logitSA, data = SA, type = "response")
+prob <- ifelse(predSA > 0.5, "1", "0" )
+table(prob, SA$`Completed task`)
+```
+
+Misclassification percentage = (5/15)*100=33.33%
+
+C)
+```{r}
+p1 <- ifelse(predSA > 0.7, "1", "0" )
+table(p1, SA$`Completed task`)
+```
+
+```{r}
+p1 <- ifelse(predSA > 0.1, "1", "0" )
+table(p1, SA$`Completed task`)
+```
+
+
+For Cutoff = 0.9, Misclassification %age = 60%
+For Cutoff = 0.1, Misclassification %age = 86.67%
+
+It is clear that cutoff should be increased.
+
+D)
+bo=-10.98, b1=1.12, b2=0.18
+
+p=1/(1+e^(-1).(-10.98 + 1.12.a1 + 0.18.a2)
+
+0.5=1/(1+e^(-1).(-10.98 + 1.12.a1 + 0.18*(4))
+
+x1= 9.1 years
+
+The programmer must have around 9 years of experience.
+
+
