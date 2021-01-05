@@ -1,0 +1,97 @@
+```{r}
+library(readxl)
+Bank <- read_excel("Banks.xlsx")
+Bank$`Financial Condition` <- factor(Bank$`Financial Condition`, levels = c(1,0))
+logit.bank <- glm(`Financial Condition` ~ `TotExp/Assets` + `TotLns&Lses/Assets`, data = Bank, family = binomial(link= "logit"))
+summary(logit.bank)
+```
+
+
+Plots of the logistic regression are as follows:
+```{r}
+plot(logit.bank)
+```
+```{r}
+test <- data.frame("TotExp/Assets" = 0.11, "TotLns&Lses/Assets" = 0.6,
+check.names = FALSE)
+```
+
+```{r}
+#Predicting Logit
+logit <- predict.glm(logit.bank, test)
+logit
+```
+
+```{r}
+#Predicting Odds
+odds <- exp(logit)
+odds
+```
+
+```{r}
+#Predicting Probability
+probability <- predict.glm(logit.bank, test, type = "response")
+probability
+```
+
+```{r}
+#Bank classification
+bankcl <- ifelse(probability>0.5, "1 - weak", "0 - strong")
+bankcl
+```
+Following are the corresponding threshold values for odds and logit respectively for cutoff=0.5:
+```{r}
+c <- as.numeric(0.5)
+o <- c/(1-c)
+o
+```
+
+```{r}
+logit_new <- log(o)
+logit_new
+```
+
+```{r}
+oddscoef <- exp(coefficients(logit.bank)[3])
+oddscoef
+```
+Since coefficient of this particular variable is very low, its effect is less significant compared to other variables.
+
+E)
+```{r}
+p <- ifelse(logit.bank$fitted.values>= 0.9, 1,0)
+table(p, Bank$`Financial Condition`)
+```
+
+```{r}
+p <- ifelse(logit.bank$fitted.values>= 0.7, 1,0)
+table(p, Bank$`Financial Condition`)
+```
+
+```{r}
+p <- ifelse(logit.bank$fitted.values>= 0.5, 1,0)
+table(p, Bank$`Financial Condition`)
+```
+
+```{r}
+p <- ifelse(logit.bank$fitted.values>= 0.3, 1,0)
+table(p, Bank$`Financial Condition`)
+```
+
+
+```{r}
+p <- ifelse(logit.bank$fitted.values>= 0.1, 1,0)
+table(p, Bank$`Financial Condition`)
+```
+
+```{r}
+p <- ifelse(logit.bank$fitted.values>= 0.05, 1,0)
+table(p, Bank$`Financial Condition`)
+```
+
+```{r}
+p <- ifelse(logit.bank$fitted.values>= 0.02, 1,0)
+table(p, Bank$`Financial Condition`)
+```
+
+The number of "false positives" i.e. number of predictions predicted as strong when it is actually weak decreases with decrease in cutoff. Hence, cutoff should be decreased.
