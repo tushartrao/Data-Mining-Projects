@@ -1,10 +1,4 @@
----
-title: "Group 15 Homework 6"
-authors: "Tushar Rao, Yiwei Li"
-output: pdf_document
----
 
-Problem 1
 ```{r}
 library(readxl)
 cars<- read_excel("18 Toyota Corolla.xlsx")
