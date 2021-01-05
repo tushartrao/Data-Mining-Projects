@@ -1,0 +1,61 @@
+```{r}
+BH.df<-read_excel("BostonHousing.xlsx",sheet = "Data")
+View(BH.df)
+library(readxl)
+library(class)
+library(caret)
+#select the variables
+bha <- BH.df[1:13]
+bha$MEDV<-factor(BH.df$MEDV)
+#Partition the data into training (60%) and validation (40%) sets.
+TRAIN <- sample(rownames(bha),dim(bha)[1]*0.6)
+train <- bha [TRAIN,]
+TEST <- setdiff(rownames(bha),TRAIN)
+test <- bha[TEST,]
+N2 <- preProcess(train[,c(1:3)],method = c("center", "scale")) 
+train_n <- train
+test_n <- test
+train_n[,c(-4,-13)] <- predict(N2, train[,c(1:3)]) 
+test_n[,c(-4,-13)] <- predict(N2, test[,c(1:3)])
+head(train_n)
+```
+
+```{r}
+#a.Perform a k-NN prediction with all 13 predictors (ignore the CAT.MEDV column),trying values of k from 1 to 5. Make sure to normalize the data (click "normalize input data"). What is the best k chosen? What does it mean?
+library(class)
+library(e1071)
+library(gmodels)
+library(kknn)
+library(Metrics)
+
+set.seed(1000)
+acc.df <- data.frame(k=seq(1,5,1),RMSE=rep(0,5))
+for (i in 1:5){
+pred_knn <- knn(train_n[,-13],test_n[,-13],cl=train_n$MEDV,k=i)
+acc.df[i,2] <- rmse(as.numeric(test$MEDV),as.numeric(pred_knn)) 
+}
+acc.df
+```
+#Answer for question a: When RMSE is the lowest, the k value is 1 so 1 is the best k value.
+```{r}
+#b. Predict the MEDV for a tract with the following information, using the best k:
+test<- data.frame('CRIM'=0.2,'ZN'=0,'INDUS'=7,'CHAS'=0,'NOX'=0.538,'RM'=6,'AGE'=62,'DIS'=4.7,'RAD'=4, 'TAX'=307,'PTRATIO'=21,'LSTAT'=10)
+test_n<- test
+test_n[,-4] <- predict(N2, test[,-4])
+test_n
+test_knn <- knn(train_n[,-13],test,cl=train_n$MEDV,k=1) 
+test_knn
+```
+#CWhy is the error of the training data zero?
+#answer for question c: becasue in the model we design it automatic choose and must be one hundrend percent right when k=1 therefore it is zero error in the training data 
+
+#DWhy is the validation data error overly optimistic compared to the error rate when applying this k-NN predictor to new data?
+#The answer for this question is that validation data is come form the and also is the sample of the new data. while when we use the knn method to predict the variable the overly optimistic is not evitbale therefore the error is overly optimistic 
+
+#EIf the purpose is to predict MEDV for several thousands of new tracts, what would be the disadvantage of using k-NN prediction? List the operations that the algorithm goes through in order to produce each prediction.
+#answer for question E 
+#A the kNN method is not suitb for predictor a large number of tracts and the calculate will be too large and complicate 
+#B the first step is we need to normalization the dataset 
+### the second step is we need the find the suitable value of k 
+### the third step is we need to find the distance between our dataset and training dataset 
+### The fourth step is we need to arrgane the value of distacne in order therewe can sorted 
