@@ -1,8 +1,4 @@
----
-output:
-  pdf_document: default
-  html_document: default
----
+Video Game Popularity Prediction based on Sales
 
 Visualization
 
