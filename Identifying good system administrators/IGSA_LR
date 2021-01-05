@@ -1,0 +1,48 @@
+
+```{r}
+library(readxl)
+SA <- read_excel("System Administrators.xlsx")
+```
+
+A)
+```{r}
+plot(SA$Experience, SA$Training, col = ifelse(SA$`Completed task` == "Yes",
+"Orange", "Green"))
+```
+
+From the graph, it is clear that experience is useful for predicting task completion. Chances of Completed Task being Yes increases with increase in experience
+
+```{r}
+SA$`Completed task` <- ifelse(SA$`Completed task` == "Yes", "1", "0")
+
+SA$`Completed task` <- as.numeric(SA$`Completed task`)
+
+# Logistic Regression
+logitSA <- glm(`Completed task` ~ Experience + Training, data = SA, family ="binomial")
+summary(logitSA)
+
+```
+```{r}
+predSA <- predict(logitSA, data = SA, type = "response")
+prob <- ifelse(predSA > 0.5, "1", "0" )
+table(prob, SA$`Completed task`)
+```
+
+Misclassification percentage = (5/15)*100=33.33%
+
+
+```{r}
+p1 <- ifelse(predSA > 0.7, "1", "0" )
+table(p1, SA$`Completed task`)
+```
+
+```{r}
+p1 <- ifelse(predSA > 0.1, "1", "0" )
+table(p1, SA$`Completed task`)
+```
+
+
+For Cutoff = 0.9, Misclassification %age = 60%
+For Cutoff = 0.1, Misclassification %age = 86.67%
+
+It is clear that cutoff should be increased.
